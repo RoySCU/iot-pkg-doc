@@ -1,0 +1,38 @@
+\documentclass[a4paper, 11pt]{article}
+    \usepackage{comment} % enables the use of multi-line comments (\ifx \fi) 
+    \usepackage{lipsum} %This package just generates Lorem Ipsum filler text. 
+    \usepackage{fullpage} % changes the margin
+    
+    \begin{document}
+    %Header-Make sure you update this information!!!!
+    \noindent
+    \large\textbf{NDN-RIOT Package Report} \\
+    \normalsize Tianyuan Yu \\ royu29@ucla.edu
+    
+    \section*{Notes to Reader}
+    I'm not a coding expert, so any suggestions about coding or design you can provide me are highly helpful! Apology if my coding style confuses you.
+    
+    \section*{Package History/Overview}
+    NDN-RIOT package is based on Wentao Shang's same named work in 2016, you can find the original paper work via NDN's publication list. Wentao's work provide NDN protocol stack on RIOT OS, but limited on basic Interest/Data exchanges. Original package creates a ndn thread aside from the user's main thread, serving networking things. Whereas, IoT scenario need built-in app-layer protocols (e.g., bootstrapping, service discovery) to facilitate development. The new package additionally create a ndn-helper thread to interact with core ndn thread, registering faces, fib entries, etc. User can call ndn-helper function to retrieve issued certificate, neighbour identities and available services, and allocated access keys.
+    
+    \section*{Environment Setting}
+
+     
+    \section*{Test and Protocols Design}
+    Basic APIs inherited from Wentao's original library can be found in ndn-riot-examples. But tests for each module is still missing. Protocols design can be found in repo's wiki page. Bootstrapping protocol is little complicated since we optimized it many times for speed issue.      
+     
+    \section*{Bootstrapping}
+    With ndn-helper, native MacOS/Linux process or boards can perform a bootstrapping client role, but not the server part. Bootstrapping controller need configuration manually. Source code for bootstrapping controller can be seen at ndn-riot-examples. Such consideration is because we plan to re-implement the bootstrapping controller part over Android, where device are powerful enough to generate key pairs with enough security level. The similar situation also exist in access control module.
+    
+    \section*{Service Discovery}
+    Neighbour Table is only used in Service Discovery, to automatically collect available identities and services under these prefixes. Table will only be initiated once when you initiate the discovery thread. You can manually add/remove entries of the table if you need.
+    
+    \section*{Access Control}
+    Like bootstrapping, ndn-helper can only delegates the identity applying for access control or access keys. Access controller in the network need configuration manually. Source code in the repo ndn-riot-examples.
+    
+    \section*{Final Evaluation}
+    \lipsum[7]
+    
+    
+    \end{document}
+    
