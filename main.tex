@@ -15,7 +15,7 @@
         Some parts of package are not well-written because I'm not a coding expert and still learning how to do things correctly. So any suggestions about coding or design you can provide are highly helpful! I'm keep tidying up code/comments and refining neccessary documentation. Apology again if my not so good coding style confuses you.
 
         \section*{Package History\&Overview}
-        NDN-RIOT package is based on Wentao Shang's same named work in 2015, you can find the original paper work via NDN's publication list, or resort to link \url{https://named-data.net/wp-content/uploads/2015/01/design_implementation_ndn_protocol.pdf}.\\ Wentao's work provide NDN protocol stack on RIOT OS, but limited on basic Interest/Data exchanges. Original package creates a \texttt{ndn} thread aside from the user's main thread, serving networking things. Whereas, IoT scenario need built-in app-layer protocols (e.g., bootstrapping, service discovery) to facilitate development. The new package additionally create a \texttt{ndn-helper} thread to interact with core \texttt{ndn} thread, register faces, fib entries, etc. User can call \texttt{ndn-helper} function to retrieve issued certificate, neighbour identities and available services, and allocated access keys.
+        NDN-RIOT package is based on Wentao Shang's same named work in 2015, you can find the this paper work via NDN's publication list, or resort to link \url{https://named-data.net/wp-content/uploads/2015/01/design_implementation_ndn_protocol.pdf}.\\ Wentao's work provide NDN protocol stack on RIOT OS, but limited on basic Interest/Data exchanges. Original package creates a \texttt{ndn} thread aside from the user's main thread, serving networking things. Whereas, IoT scenario need built-in app-layer protocols (e.g., bootstrapping, service discovery) to facilitate development. The new package additionally create a \texttt{ndn-helper} thread to interact with core \texttt{ndn} thread. Three app-layer protocol reside in \texttt{ndn-helper} to run as ndn applications. User can call \texttt{ndn-helper} function to retrieve issued certificate, neighbour identities and available services, and allocated access keys.
         
         \section*{Environment Setting}
         \subsection*{Source}
@@ -23,11 +23,14 @@
         Use NDN-RIOT package from \url{https://github.com/Zhiyi-Zhang/ndn-riot}
         \subsubsection*{Package Makefile}
         RIOT cloned from address above have already equipped with NDN-RIOT package (new old version of Wentao's work in 2015). To re-configure, go to folder \texttt{../RIOT/pkg/ndn-riot}, redirect the makefile here to a local source folder, or to remote github link (be sure of using the newest commit version number in makefile).\\
-        For example, if you'd like to replace original package, to \texttt{../RIOT/pkg/ndn-riot}, find \texttt{Makefile} and replace the package configuration with \\
+        For example, if you'd like to replace original package, to \texttt{../RIOT/pkg/ndn-riot}, find \texttt{Makefile} and replace the package configuration with \\ \\
         \texttt{PKG\_SOURCE\_LOCAL ?= \$(RIOTBASE)/ndn-riot \\
-                PKG\_BUILDDIR ?= \$(PKGDIRBASE)/ndn-riot} 
+                PKG\_BUILDDIR ?= \$(PKGDIRBASE)/ndn-riot} \\ \\
+        and in \texttt{Makefile.include}, add line \\
+        \texttt{USEMODULE += ndn-helper}
+
         \subsubsection*{Project Makefile}
-        Each new project's which use this package should have makefile with \\
+        Each new project which uses this package should have makefile with \\
         \texttt{USEPKG += micro-ecc \hfill \#dealing with ECDSA signature\\
                 USEPKG += ndn-riot  \\
                 USEMODULE += crypto \hfill \#dealing with crypto operation\\
@@ -38,11 +41,11 @@
                 CFLAGS += -DCRYPTO-THREEDES} \\
     
         \section*{Test and Examples}
-        Basic APIs inherited from Wentao's original library can be found in example folder \url{https://github.com/Zhiyi-Zhang/ndn-riot-tests/examples}. But tests for each module are still missing. Protocols design can be found in the same repo's wiki page. Bootstrapping protocol is little complicated since we optimized it many times for speed issue. 
+        Basic APIs inherited from Wentao's original library can be found in example folder \url{https://github.com/Zhiyi-Zhang/ndn-riot-tests/examples}\\ But tests for each module are still missing. Protocols design can be found in the same repo's wiki page. Bootstrapping protocol is little complicated since we optimized it many times for faster sign-on speed. 
  
         \subsubsection*{Test-node-1 \& Test-node-2}
-        In the example folder, \texttt{test-node-1} serves as a encrypted content producer (e.g., heartbeat sensor). It first bootstraps with bootstrapping controller, fetching its identity and home prefix, then register serveral subprefixes to \texttt{ndn-helper-discovery} and broadcast. 
-        \texttt{test-node-2} serves as a encrypted content consumer. After bootstrapped and register\&broadcast available services, consumer uses a ECDSA key pair to apply for the access of first listened identity's first service. Eventually consumer gets the producer's encryption key. Before running two test nodes, bootstrapping controller and access controller 
+        In the example folder, \texttt{test-node-1} serves as a encrypted content producer (e.g., heartbeat sensor). It first bootstraps with bootstrapping controller, fetching its identity and home prefix, then registers serveral subprefixes to \texttt{ndn-helper-discovery} and broadcast. 
+        \texttt{test-node-2} serves as a encrypted content consumer. After bootstrapped and register\&broadcast available services, consumer uses a ECDSA key pair to apply for the access of first listened identity's first collected service. Eventually consumer gets the producer's encryption key. These two nodes can run as native MacOS/Linux process but suffer from insufficient memory when running on samr21-xpro boards. To tackle this, you can see Tips mentioned later. Before running two test nodes, bootstrapping controller and access controller 
         should be established first. Source code can be found in the same folder.
 
         \section*{Usage}
@@ -60,9 +63,10 @@
 
         \section*{Tips}
         \subsubsection*{Boards vs. Native}
-        If you are using samr21-xpro, it can't run discovery and access control thread together for limited RAM. Currently you can try the combination bootstrap + discovery or bootstrap + access control. If you try as a native MacOS/Linux Process, RAM won't bother us.
+        If you are using samr21-xpro, it can't run discovery and access control thread together for limited RAM. Currently you can try the combination bootstrap + discovery or bootstrap + access control. If you try as a native MacOS/Linux process, RAM won't bother us.
         
-        \subsubsection*{TLV Encoding/Decoding}
+        \subsubsection*{Encoding/Decoding}
+        NDN-RIOT uses ECDSA curve secp160r1 for micro-ecc signature. But seldom boards can generate key pairs on their own for lacking "pseudo random number generator". Hence, all ECDSA key pairs are hard coded for now. \\
         If having no specific explanation, identity names, service names and "subprefixes" are all encoded as Name TLV, although they are not exact "names". This is because Wentao's original library has well-supported APIs to cope with Name TLV blocks.
 
         \subsubsection*{Debugging}
