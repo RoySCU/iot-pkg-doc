@@ -11,26 +11,52 @@
     \large\textbf{NDN-RIOT Package Report} \\ 
     \normalsize Tianyuan Yu \\ royu29@ucla.edu
     
-    \section{Notes}
-    Package is not well-written because I'm not a coding expert, so any suggestions about coding or design you can provide are highly helpful! I'm keep tidying up code and revising neccessary documentation. Apology again if my not so good coding style confuses you.
+    \section*{Notes}
+    Some parts of package are not well-written because I'm not a coding expert, so any suggestions about coding or design you can provide are highly helpful! I'm keep tidying up code and revising neccessary documentation. Apology again if my not so good coding style confuses you.
     
-    \section{Package History/Overview}
-    NDN-RIOT package is based on Wentao Shang's same named work in 2016, you can find the original paper work via NDN's publication list, or resort to link \url{https://named-data.net/wp-content/uploads/2015/01/design_implementation_ndn_protocol.pdf}.\\ Wentao's work provide NDN protocol stack on RIOT OS, but limited on basic Interest/Data exchanges. Original package creates a \texttt{ndn} thread aside from the user's main thread, serving networking things. Whereas, IoT scenario need built-in app-layer protocols (e.g., bootstrapping, service discovery) to facilitate development. The new package additionally create a \texttt{ndn-helper} thread to interact with core \texttt{ndn} thread, registering faces, fib entries, etc. User can call \texttt{ndn-helper} function to retrieve issued certificate, neighbour identities and available services, and allocated access keys.
+    \section*{Package History/Overview}
+    NDN-RIOT package is based on Wentao Shang's same named work in 2015, you can find the original paper work via NDN's publication list, or resort to link \url{https://named-data.net/wp-content/uploads/2015/01/design_implementation_ndn_protocol.pdf}.\\ Wentao's work provide NDN protocol stack on RIOT OS, but limited on basic Interest/Data exchanges. Original package creates a \texttt{ndn} thread aside from the user's main thread, serving networking things. Whereas, IoT scenario need built-in app-layer protocols (e.g., bootstrapping, service discovery) to facilitate development. The new package additionally create a \texttt{ndn-helper} thread to interact with core \texttt{ndn} thread, register faces, fib entries, etc. User can call \texttt{ndn-helper} function to retrieve issued certificate, neighbour identities and available services, and allocated access keys.
     
-    \section{Environment Setting}
-    \subsection{Source}
+    \section*{Environment Setting}
+    \subsection*{Source}
     Use RIOT OS from \url{https://github.com/named-data-iot/RIOT} (not the official RIOT OS)\\
     Use NDN-RIOT package from \url{https://github.com/Zhiyi-Zhang/ndn-riot}
-    \subsection{Package Configuration}
-    RIOT cloned from address above have already equipped with NDN-RIOT package (new old version of Wentao's work in 2016). To replace the configuration, go to folder /RIOT/pkg/ndn-riot, redirect the makefile here to a local source folder, or to remote github link (be sure of using the newest commit version number in makefile) 
-    \subsection{Makefile}
-    Each new project which uses this package should add
+    \subsection*{Package Makefile}
+    RIOT cloned from address above have already equipped with NDN-RIOT package (new old version of Wentao's work in 2015). To re-configure, go to folder \texttt{../RIOT/pkg/ndn-riot}, redirect the makefile here to a local source folder, or to remote github link (be sure of using the newest commit version number in makefile).\\
+    For example, if you'd like to replace original package, to \texttt{../RIOT/pkg/ndn-riot}, find \texttt{Makefile} and replace the package configuration with \\
+    \texttt{PKG-SOURCE-LOCAL ?= $(RIOTBASE)/ndn-riot \\
+            PKG-BUILDDIR ?= $(PKGDIRBASE)/ndn-riot}
+    \subsection*{Project Makefile}
+    Each new project's which use this package should have makefile with \\
+    \texttt{USEPKG += micro-ecc \hfill //dealing with ECDSA signature\\
+            USEPKG += ndn-riot  \\
+            USEMODULE += crypto \hfill //dealing with crypto operation\\
+            USEMODULE += cipher-modes \hfill //dealing with AES-128 cipher block chain mode}\\ \\
+    and CFLAGS to enable RIOT's crypto module \\
+    \texttt{
+            CFLAGS += -DCRYPTO-AES \\
+            CFLAGS += -DCRYPTO-THREEDES} \\
 
-    \section{Test and Examples}
-    Basic APIs inherited from Wentao's original library can be found in ndn-riot-examples. But tests for each module is still missing. Protocols design can be found in repo's wiki page. Bootstrapping protocol is little complicated since we optimized it many times for speed issue.      
-    Examples can be found in \url{https://github.com/Zhiyi-Zhang/ndn-riot-tests/examples} 
+    \section*{Test and Examples}
+    Basic APIs inherited from Wentao's original library can be found in example folder \url{https://github.com/Zhiyi-Zhang/ndn-riot-tests/examples}. But tests for each module are still missing. Protocols design can be found in the same repo's wiki page. Bootstrapping protocol is little complicated since we optimized it many times for speed issue. 
 
-    \section{Core Helper APIs}
+    \section*{Tips}
+    \subsection*{Boards vs. Native}
+    If you are using samr21-xpro, it can't run discovery and access control thread together for limited RAM. Currently you can try the combination bootstrap + discovery or bootstrap + access control. If you try as a native MacOS/Linux Process, memory won't bother us.
+    
+    \subsection*{Debugging}
+    Basically, most issues happen after one side receive the packet and begin processing. If one doesn't receive any packets, perhaps the reasons lie in the networking configuration or hardware modules imported.
+    
+    \subsection*{Bootstrapping}
+    With \texttt{ndn-helper}, native MacOS/Linux process or boards can perform a bootstrapping client role, but not the server part. Bootstrapping controller need configuration manually. Source code for bootstrapping controller can be seen at example folder. Such consideration is because we plan to re-implement the bootstrapping controller part over Android, where device are powerful enough to generate key pairs with enough security level. The similar situation also exist in access control module.
+    
+    \subsection*{Service Discovery}
+    Neighbour Table is only used in Service Discovery, to automatically collect available identities and services under these prefixes. Table will only be initiated once when you initiate the discovery thread. You can manually add/remove entries of the table if you need.
+    
+    \subsection*{Access Control}
+    Like bootstrapping, \texttt{ndn-helper} can only delegates the identity applying for access control or access keys. Access controller in the network need configuration manually. Source code in the example folder.
+
+    \section*{Core Helper APIs}
     Listed APIs can be found in \texttt{helper-app.h}
     \begin{enumerate}
     \item \texttt{ndn-helper-init()} \\
@@ -54,17 +80,6 @@
     \item \texttt{ndn-helper-access-consumer()} \\
     Apply for certain producer identity's access, return a pointer of producer's encrytion key.
     \end{enumerate}
-    
-    \section{Bootstrapping}
-    With ndn-helper, native MacOS/Linux process or boards can perform a bootstrapping client role, but not the server part. Bootstrapping controller need configuration manually. Source code for bootstrapping controller can be seen at ndn-riot-examples. Such consideration is because we plan to re-implement the bootstrapping controller part over Android, where device are powerful enough to generate key pairs with enough security level. The similar situation also exist in access control module.
-    
-    \section{Service Discovery}
-    Neighbour Table is only used in Service Discovery, to automatically collect available identities and services under these prefixes. Table will only be initiated once when you initiate the discovery thread. You can manually add/remove entries of the table if you need.
-    
-    \section{Access Control}
-    Like bootstrapping, ndn-helper can only delegates the identity applying for access control or access keys. Access controller in the network need configuration manually. Source code in the repo ndn-riot-examples.
-
-    
     
     
     \end{document}
