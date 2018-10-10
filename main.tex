@@ -1,86 +1,116 @@
 \documentclass[a4paper, 11pt]{article}
-    \usepackage{comment} % enables the use of multi-line comments (\ifx \fi) 
-    \usepackage{lipsum} %This package just generates Lorem Ipsum filler text. 
-    \usepackage{fullpage} % changes the margin
-    \usepackage{hyperref} % To insert URL
+        \usepackage{comment} % enables the use of multi-line comments (\ifx \fi) 
+        \usepackage{lipsum} %This package just generates Lorem Ipsum filler text. 
+        \usepackage{fullpage} % changes the margin
+        \usepackage{hyperref} % To insert URL
+      
+          
+        \begin{document}
+        %Header-Make sure you update this information!!!!
+        \noindent
+        \large\textbf{NDN-RIOT Package Report} \\ 
+        \normalsize Tianyuan Yu \\ royu29@ucla.edu
+        
+        \section*{Notes}
+        Some parts of package are not well-written because I'm not a coding expert and still learning how to do things correctly. So any suggestions about coding or design you can provide are highly helpful! I'm keep tidying up code/comments and refining neccessary documentation. Apology again if my not so good coding style confuses you.
 
+        \section*{Package History\&Overview}
+        NDN-RIOT package is based on Wentao Shang's same named work in 2015, you can find the original paper work via NDN's publication list, or resort to link \url{https://named-data.net/wp-content/uploads/2015/01/design_implementation_ndn_protocol.pdf}.\\ Wentao's work provide NDN protocol stack on RIOT OS, but limited on basic Interest/Data exchanges. Original package creates a \texttt{ndn} thread aside from the user's main thread, serving networking things. Whereas, IoT scenario need built-in app-layer protocols (e.g., bootstrapping, service discovery) to facilitate development. The new package additionally create a \texttt{ndn-helper} thread to interact with core \texttt{ndn} thread, register faces, fib entries, etc. User can call \texttt{ndn-helper} function to retrieve issued certificate, neighbour identities and available services, and allocated access keys.
+        
+        \section*{Environment Setting}
+        \subsection*{Source}
+        Use RIOT OS from \url{https://github.com/named-data-iot/RIOT} (not the official RIOT OS)\\
+        Use NDN-RIOT package from \url{https://github.com/Zhiyi-Zhang/ndn-riot}
+        \subsubsection*{Package Makefile}
+        RIOT cloned from address above have already equipped with NDN-RIOT package (new old version of Wentao's work in 2015). To re-configure, go to folder \texttt{../RIOT/pkg/ndn-riot}, redirect the makefile here to a local source folder, or to remote github link (be sure of using the newest commit version number in makefile).\\
+        For example, if you'd like to replace original package, to \texttt{../RIOT/pkg/ndn-riot}, find \texttt{Makefile} and replace the package configuration with \\
+        \texttt{PKG\_SOURCE\_LOCAL ?= \$(RIOTBASE)/ndn-riot \\
+                PKG\_BUILDDIR ?= \$(PKGDIRBASE)/ndn-riot} 
+        \subsubsection*{Project Makefile}
+        Each new project's which use this package should have makefile with \\
+        \texttt{USEPKG += micro-ecc \hfill \#dealing with ECDSA signature\\
+                USEPKG += ndn-riot  \\
+                USEMODULE += crypto \hfill \#dealing with crypto operation\\
+                USEMODULE += cipher\_modes \hfill \#dealing with AES-128 cipher block chain mode}\\ \\
+        and CFLAGS to enable RIOT's crypto module \\
+        \texttt{
+                CFLAGS += -DCRYPTO-AES \\
+                CFLAGS += -DCRYPTO-THREEDES} \\
     
-    \begin{document}
-    %Header-Make sure you update this information!!!!
-    \noindent
-    \large\textbf{NDN-RIOT Package Report} \\ 
-    \normalsize Tianyuan Yu \\ royu29@ucla.edu
-    
-    \section*{Notes}
-    Some parts of package are not well-written because I'm not a coding expert, so any suggestions about coding or design you can provide are highly helpful! I'm keep tidying up code and revising neccessary documentation. Apology again if my not so good coding style confuses you.
-    
-    \section*{Package History/Overview}
-    NDN-RIOT package is based on Wentao Shang's same named work in 2015, you can find the original paper work via NDN's publication list, or resort to link \url{https://named-data.net/wp-content/uploads/2015/01/design_implementation_ndn_protocol.pdf}.\\ Wentao's work provide NDN protocol stack on RIOT OS, but limited on basic Interest/Data exchanges. Original package creates a \texttt{ndn} thread aside from the user's main thread, serving networking things. Whereas, IoT scenario need built-in app-layer protocols (e.g., bootstrapping, service discovery) to facilitate development. The new package additionally create a \texttt{ndn-helper} thread to interact with core \texttt{ndn} thread, register faces, fib entries, etc. User can call \texttt{ndn-helper} function to retrieve issued certificate, neighbour identities and available services, and allocated access keys.
-    
-    \section*{Environment Setting}
-    \subsection*{Source}
-    Use RIOT OS from \url{https://github.com/named-data-iot/RIOT} (not the official RIOT OS)\\
-    Use NDN-RIOT package from \url{https://github.com/Zhiyi-Zhang/ndn-riot}
-    \subsection*{Package Makefile}
-    RIOT cloned from address above have already equipped with NDN-RIOT package (new old version of Wentao's work in 2015). To re-configure, go to folder \texttt{../RIOT/pkg/ndn-riot}, redirect the makefile here to a local source folder, or to remote github link (be sure of using the newest commit version number in makefile).\\
-    For example, if you'd like to replace original package, to \texttt{../RIOT/pkg/ndn-riot}, find \texttt{Makefile} and replace the package configuration with \\
-    \texttt{PKG-SOURCE-LOCAL ?= $(RIOTBASE)/ndn-riot \\
-            PKG-BUILDDIR ?= $(PKGDIRBASE)/ndn-riot}
-    \subsection*{Project Makefile}
-    Each new project's which use this package should have makefile with \\
-    \texttt{USEPKG += micro-ecc \hfill //dealing with ECDSA signature\\
-            USEPKG += ndn-riot  \\
-            USEMODULE += crypto \hfill //dealing with crypto operation\\
-            USEMODULE += cipher-modes \hfill //dealing with AES-128 cipher block chain mode}\\ \\
-    and CFLAGS to enable RIOT's crypto module \\
-    \texttt{
-            CFLAGS += -DCRYPTO-AES \\
-            CFLAGS += -DCRYPTO-THREEDES} \\
+        \section*{Test and Examples}
+        Basic APIs inherited from Wentao's original library can be found in example folder \url{https://github.com/Zhiyi-Zhang/ndn-riot-tests/examples}. But tests for each module are still missing. Protocols design can be found in the same repo's wiki page. Bootstrapping protocol is little complicated since we optimized it many times for speed issue. 
+ 
+        \subsubsection*{Test-node-1 \& Test-node-2}
+        In the example folder, \texttt{test-node-1} serves as a encrypted content producer (e.g., heartbeat sensor). It first bootstraps with bootstrapping controller, fetching its identity and home prefix, then register serveral subprefixes to \texttt{ndn-helper-discovery} and broadcast. 
+        \texttt{test-node-2} serves as a encrypted content consumer. After bootstrapped and register\&broadcast available services, consumer uses a ECDSA key pair to apply for the access of first listened identity's first service. Eventually consumer gets the producer's encryption key. Before running two test nodes, bootstrapping controller and access controller 
+        should be established first. Source code can be found in the same folder.
 
-    \section*{Test and Examples}
-    Basic APIs inherited from Wentao's original library can be found in example folder \url{https://github.com/Zhiyi-Zhang/ndn-riot-tests/examples}. But tests for each module are still missing. Protocols design can be found in the same repo's wiki page. Bootstrapping protocol is little complicated since we optimized it many times for speed issue. 
+        \section*{Usage}
+        To start with \texttt{ndn-helper} related functions, call \texttt{ndn-helper-init} to create and initiate \texttt{ndn-helper} thread. To terminate, call \texttt{ndn-helper-terminate}. Most APIs mentioned can be found \texttt{helper-app.h}.
+        
+        \subsubsection*{Bootstrapping}
+        Call \texttt{ndn\_helper\_bootstrap\_start} to passing a ECDSA key pair to \texttt{ndn-helper} to start bootstrapping thread. If success, issued certificate and parsing result will be kept in \texttt{ndn-helper}. User can call \texttt{ndn\_helper\_bootstrap\_info} to retrieve the bootstrapping result. Thread will automatically terminate once finishing (success/timeout).
+    
+        \subsubsection*{Service Discovery}
+        Call \texttt{ndn\_helper\_discovery\_init} to create and initiate the \texttt{ndn-helper-discovery} thread, \texttt{ndn\_helper\_discovery\_register\_prefix} is to register subprefixes for discovery. This function must be called before \texttt{ndn\_helper\_discovery\_start}, which will broadcast available one's available services to the network. \texttt{ndn\_helper\_discovery\_query} is used to query interested service with identity specify the interest receiver, this function (if success) will directly return the content block of data. Call \texttt{ndn\_helper\_discovery\_terminate}
+        to end the discovery thread.
+        
+        \subsubsection*{Access Control}
+        Call \texttt{ndn\_helper\_access\_init} to create and initiate the \texttt{ndn-helper-access} thread. \\ \texttt{ndn\_helper\_access\_producer} will use a key pair to contact access controller, trying to negotiate a symmetric key. This function will return (if success) a pointer of negotiated symmetric key.  \\ Whereas \texttt{ndn\_helper\_access\_consumer} requires ECDSA key pair and desired identity as inputs, and return a pointer of coresponding producer identity's encrytion (symmetric) key if application success. To terminate the \texttt{ndn-helper-access} thread, call \texttt{ndn\_helper\_access\_terminate}.             
 
-    \section*{Tips}
-    \subsection*{Boards vs. Native}
-    If you are using samr21-xpro, it can't run discovery and access control thread together for limited RAM. Currently you can try the combination bootstrap + discovery or bootstrap + access control. If you try as a native MacOS/Linux Process, memory won't bother us.
-    
-    \subsection*{Debugging}
-    Basically, most issues happen after one side receive the packet and begin processing. If one doesn't receive any packets, perhaps the reasons lie in the networking configuration or hardware modules imported.
-    
-    \subsection*{Bootstrapping}
-    With \texttt{ndn-helper}, native MacOS/Linux process or boards can perform a bootstrapping client role, but not the server part. Bootstrapping controller need configuration manually. Source code for bootstrapping controller can be seen at example folder. Such consideration is because we plan to re-implement the bootstrapping controller part over Android, where device are powerful enough to generate key pairs with enough security level. The similar situation also exist in access control module.
-    
-    \subsection*{Service Discovery}
-    Neighbour Table is only used in Service Discovery, to automatically collect available identities and services under these prefixes. Table will only be initiated once when you initiate the discovery thread. You can manually add/remove entries of the table if you need.
-    
-    \subsection*{Access Control}
-    Like bootstrapping, \texttt{ndn-helper} can only delegates the identity applying for access control or access keys. Access controller in the network need configuration manually. Source code in the example folder.
+        \section*{Tips}
+        \subsubsection*{Boards vs. Native}
+        If you are using samr21-xpro, it can't run discovery and access control thread together for limited RAM. Currently you can try the combination bootstrap + discovery or bootstrap + access control. If you try as a native MacOS/Linux Process, RAM won't bother us.
+        
+        \subsubsection*{TLV Encoding/Decoding}
+        If having no specific explanation, identity names, service names and "subprefixes" are all encoded as Name TLV, although they are not exact "names". This is because Wentao's original library has well-supported APIs to cope with Name TLV blocks.
 
-    \section*{Core Helper APIs}
-    Listed APIs can be found in \texttt{helper-app.h}
-    \begin{enumerate}
-    \item \texttt{ndn-helper-init()} \\
-    Create and Initialize the \texttt{ndn-helper} thread 
-    \item \texttt{ndn-helper-bootstrap-start()} \\
-    Passing a key pair structure to the function and start bootstrap process with a pre-configured controller. This function will create a thread \texttt{ndn-helper-bootstrap}.To notice, current NDN-RIOT uses ECDSA curve secp160r1. Please make sure the input key pair are the correct type
-    \item \texttt{ndn-helper-bootstrap-info()} \\ 
-    Retriece the issued certificate from \texttt{ndn-helper}
-    \item \texttt{ndn-helper-discovery-init()} \\
-    Create and Initialize the thread \texttt{ndn-helper-discovery}, as well as the neighbour table
-    \item \texttt{ndn-helper-discovery-register-prefix()} \\
-    Register a subprefix to \texttt{ndn-helper-discovery}, this function is called before \texttt{ndn-helper-discovery-init()} and \texttt{ndn-helper-discovery-start()}. All subprefix should be registered before \texttt{ndn-helper-discovery-start()}
-    \item \texttt{ndn-helper-discovery-start()} \\
-    Start periodically broadcast the registered services and automatically collect the listened neighbour identities and service names to neighbour table. User can check neighbour table via APIs in \texttt{neighbour-table.h}
-    \item \texttt{ndn-helper-access-init()} \\
-    Create and Initialize the \texttt{ndn-helper-access} thread 
-    \item \texttt{ndn-helper-access-terminate()} \\
-    Terminate \texttt{ndn-helper-access}
-    \item \texttt{ndn-helper-access-producer()} \\
-    Apply for access control as a producer, return a pointer of allocated key for content encrytion. This operation need a Access Controller in the network to negotiate symmetric key for applicants.
-    \item \texttt{ndn-helper-access-consumer()} \\
-    Apply for certain producer identity's access, return a pointer of producer's encrytion key.
-    \end{enumerate}
-    
-    
-    \end{document}
-    
+        \subsubsection*{Debugging}
+        Basically, most issues happen after one side receive the packet and begin processing. If one doesn't receive any packets, perhaps the reasons lie in the networking configuration or hardware modules imported.
+        
+        \subsubsection*{Bootstrapping}
+        With \texttt{ndn-helper}, native MacOS/Linux process or boards can perform a bootstrapping client role, but not the server part. Bootstrapping controller need configuration manually. Source code for bootstrapping controller can be seen at example folder. Such consideration is because we plan to re-implement the bootstrapping controller part over Android, where device are powerful enough to generate key pairs with enough security level. The similar situation also exist in access control module.
+        
+        \subsubsection*{Service Discovery}
+        Neighbour Table is only used in Service Discovery, to automatically collect available identities and services under these prefixes. Table will only be initiated once when you initiate the discovery thread. You can manually add/remove entries of the table if you need.
+        
+        \subsubsection*{Access Control}
+        Like bootstrapping, \texttt{ndn-helper} can only delegates the identity applying for access control or access keys. Access controller in the network need configuration manually. Source code in the example folder.
+        
+        \section*{Key Parameters}
+        Listed structure can be found in \texttt{helper-block.h} 
+
+        \subsubsection*{ndn\_bootstrap\_t}
+        \begin{enumerate}
+        \item \texttt{certificate}: hold the issue certificate from bootstrapping.
+        \item \texttt{home\_prefix}: hold home prefix parsed from received certificate.
+        \item \texttt{anchor}: hold the anchor certificate (trust anchor) fetched in bootstrapping.
+        \end{enumerate}
+
+        \subsubsection*{ndn\_discovery\_t}
+        \begin{enumerate}
+                \item \texttt{identity}: used in query, indicating wanted identity
+                \item \texttt{service}: used in query, indicating wanted service
+        \end{enumerate}        
+
+        \subsubsection*{ndn\_access\_t}
+        \begin{enumerate}
+                \item \texttt{ace}: keypair used for access control
+                \item \texttt{opt}: producer's optional parameters (current useless)/consumer's desired identity
+        \end{enumerate}  
+
+        \subsubsection*{ndn\_keypair\_t}
+        \begin{enumerate}
+                \item \texttt{pub}: public key bits, should be 64 bytes
+                \item \texttt{pvt}: private key bits, should be 32 bytes
+        \end{enumerate} 
+
+        \subsubsection*{ndn\_key\_t}
+        \begin{enumerate}
+                \item \texttt{key}: symmetric key bits
+                \item \texttt{len}: length of key bits
+        \end{enumerate} 
+        
+        
+        \end{document}
+        
