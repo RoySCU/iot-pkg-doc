@@ -47,8 +47,9 @@
                 CFLAGS += -DCRYPTO-THREEDES} \\
     
         \section*{Test and Examples}
-        Basic APIs inherited from Wentao's original library can be found in example folder \url{https://github.com/named-data-iot/ndn-riot-examples}\\ They can still be used in this package, with slight modification of using secp160r1 ECDSA key rather secp256r1 when dealing cryptographic operation. See detailed reasons in Tips. Tests for each module are still missing. Protocols design can be found in the same repo's wiki page. Bootstrapping protocol is little complicated since we optimized it many times for faster sign-on speed. 
- 
+        Basic APIs inherited from Wentao's original library can be found in example folder \url{https://github.com/named-data-iot/ndn-riot-examples}\\ They can still be used in this package, with slight modification of using secp160r1 ECDSA key rather secp256r1 when dealing cryptographic operation. Tests for each module are still missing. Protocols design can be found in the same repo's wiki page. Bootstrapping protocol is little complicated since we optimized it many times for faster sign-on speed. 
+        Other test cases are in \texttt{ndn-riot-tests}.
+
         \subsubsection*{Test-node-1 \& Test-node-2}
         In the example folder, they perform as devices need to be bootstrapped and basic producer \& consumer. \texttt{test-node-1} serves as a encrypted content producer (e.g., heartbeat sensor). It first bootstraps with bootstrapping controller, fetching its identity and home prefix, then registers serveral subprefixes to \texttt{ndn-helper-discovery} and broadcast. 
         \texttt{test-node-2} serves as a encrypted content consumer. After bootstrapped and register \& broadcast available services, consumer uses a ECDSA key pair to apply for the access of first listened identity's first collected service. Eventually consumer gets the producer's encryption key. These two nodes can run as native MacOS/Linux process but suffer from insufficient memory when running on samr21-xpro boards. To tackle this, you can see Tips mentioned later. Before running two test nodes, bootstrapping controller and access controller 
